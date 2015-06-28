@@ -1,6 +1,6 @@
 
 
-class H5grid {
+class H5Grid {
     private:
     public:
         int open(const char * filename, const char * mode, int * dims, int ndims);
@@ -11,32 +11,32 @@ class H5grid {
         void close();
 };
 
-int H5grid :: open(const char * filename, const char * mode, int * dims, int ndims)
+int H5Grid :: open(const char * filename, const char * mode, int * dims, int ndims)
 {
     return 0;
 }
 
-int H5grid :: read_dataset(const char * dataset_name, double * dataset)
+int H5Grid :: read_dataset(const char * dataset_name, double * dataset)
 {
     return 0;
 }
 
-int H5grid :: write_dataset(const char * dataset_name, double * dataset)
+int H5Grid :: write_dataset(const char * dataset_name, double * dataset)
 {
     return 0;
 }
 
-int H5grid :: set_attribute(const char * attr_name, int * attr_value)
+int H5Grid :: set_attribute(const char * attr_name, int * attr_value)
 {
     return 0;
 }
 
-int H5grid :: get_attribute(const char * attr_name, int * attr_value)
+int H5Grid :: get_attribute(const char * attr_name, int * attr_value)
 {
     return 0;
 }
 
-void H5grid :: close()
+void H5Grid :: close()
 {
 }
 
@@ -49,7 +49,7 @@ int main(int argc, char ** argv)
     dims[2] = 100;
 
 
-    H5grid out;
+    H5Grid out;
     out.open("out.h5", "w", dims, 3);
     return 0;
 }
