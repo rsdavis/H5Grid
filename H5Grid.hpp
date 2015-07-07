@@ -9,14 +9,16 @@ class H5Grid {
 
     private:
         hid_t file_id;
-        int Nx, Ny, Nz;
+        hsize_t dims[3];
+
         void create_group(const char * dataset_name);
+        void parse (std::string attr_name, std::string &path, std::string &name);
 
     public:
         H5Grid();
         int open(std::string filename, std::string mode, int &nx, int &ny, int &nz);
-        int read_dataset(const char * dataset_name, double * dataset);
-        int write_dataset(const char * dataset_name, double * dataset);
+        int read_dataset(std::string dataset_name, double * dataset);
+        int write_dataset(std::string dataset_name, double * dataset);
         int set_attribute(std::string attr_name, int attr_value);
         int get_attribute(std::string attr_name, int &attr_value);
         int close();
@@ -104,32 +106,94 @@ int H5Grid :: open(std::string filename, std::string mode, int &nx, int &ny, int
 
     }
 
-    Nx = nx;
-    Ny = ny;
-    Nz = nz;
+    dims[0] = nx;
+    dims[1] = ny;
+    dims[2] = nz;
 
     return 0;
 }
 
-int H5Grid :: read_dataset(const char * dataset_name, double * dataset)
+int H5Grid :: read_dataset(std::string dataset_name, double * dataset)
 {
     /**
     * @param dataset_name name of the dataset
     * @param dataset pointer to the first element of data
     **/
+
+    hid_t data_id; 
+
+    //check that dataset exists
+    /* requires that you check every group in the path
+    htri_t dataset_exists = H5Lexists(file_id, dataset_name.c_str(), H5P_DEFAULT);
+    if (dataset_exists <= 0) return 1;
+    */
+
+    data_id = H5Dopen(file_id, dataset_name.c_str(), H5P_DEFAULT);
+    H5Dread(data_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, dataset);
+
+    H5Dclose(data_id);
+
     return 0;
 }
 
-int H5Grid :: write_dataset(const char * dataset_name, double * dataset)
+int H5Grid :: write_dataset(std::string dataset_name, double * dataset)
 {
     /**
     * @param dataset_name name of the dataset
     * @param dataset pointer to the first element of data
     **/
+
+    hid_t dcpl_id, space_id, data_id;
+    herr_t error;
+    int rank;
+
+    if (dims[2] == 0) rank = 2;
+    else rank = 3;
+
+    std::string path;
+    std::string name;
+
+    // create groups in the path
+    create_group(dataset_name.c_str());
+
+    // check if dataset already exisits
+    htri_t dataset_exists = H5Lexists(file_id, dataset_name.c_str(), H5P_DEFAULT);
+
+    if (dataset_exists==0) { // create dataset
+
+        // chunk for data compression
+        dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
+        H5Pset_chunk(dcpl_id, rank, dims);
+        H5Pset_shuffle(dcpl_id);
+        H5Pset_deflate(dcpl_id, 1);
+
+        space_id = H5Screate_simple(rank, dims, NULL);
+        data_id = H5Dcreate(file_id, 
+                            dataset_name.c_str(), 
+                            H5T_NATIVE_DOUBLE, 
+                            space_id, 
+                            H5P_DEFAULT, 
+                            dcpl_id, 
+                            H5P_DEFAULT);
+
+    } else { // dataset_exists, just open and overwrite data
+        data_id = H5Dopen(file_id, dataset_name.c_str(), H5P_DEFAULT);
+    }
+
+    error = H5Dwrite(data_id,
+                     H5T_NATIVE_DOUBLE,
+                     H5S_ALL,
+                     H5S_ALL,
+                     H5P_DEFAULT,
+                     dataset);
+
+    if (error < 0) return 1;
+    if (dataset_exists) return 2;
+
     return 0;
 }
 
-void parse (std::string attr_name, std::string &path, std::string &name)
+void H5Grid :: parse (std::string attr_name, std::string &path, std::string &name)
 {
     size_t start = 0;
     size_t end = 0;

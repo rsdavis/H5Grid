@@ -9,4 +9,4 @@ libgtest.a: gtest-all.o
 	ar -rv libgtest.a gtest-all.o
 
 a.out: H5Grid_test.cpp H5Grid.hpp
-	g++ -isystem $(gtest)/include -pthread H5Grid_test.cpp libgtest.a -o a.out -I$(hdf5)/include -L$(hdf5)/lib -lhdf5 -lz
+	g++ -Wall -isystem $(gtest)/include -pthread H5Grid_test.cpp libgtest.a -o a.out -I$(hdf5)/include -L$(hdf5)/lib -lhdf5 -lz
