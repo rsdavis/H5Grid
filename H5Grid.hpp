@@ -14,7 +14,7 @@ class H5Grid {
         int read_dataset(const char * dataset_name, double * dataset);
         int write_dataset(const char * dataset_name, double * dataset);
         int set_attribute(std::string attr_name, int attr_value);
-        int get_attribute(const char * attr_name, int * attr_value);
+        int get_attribute(std::string attr_name, int &attr_value);
         void close();
 };
 
@@ -159,12 +159,26 @@ int H5Grid :: set_attribute(std::string attr_name, int  attr_value)
     return 0;
 }
 
-int H5Grid :: get_attribute(const char * attr_name, int * attr_value)
+int H5Grid :: get_attribute(std::string attr_name, int &attr_value)
 {
     /**
     * @param attr_name Name/address of the attribute
     * @param attr_value Value of the attribute
     **/
+
+    hid_t attr_id;
+    std::string path;
+    std::string name;
+
+    parse(attr_name, path, name);
+    std::cout << path << ":" << name << std::endl;
+
+    if (H5Aexists_by_name(file_id, path.c_str(), name.c_str(), H5P_DEFAULT) <= 0) return 1;
+
+    attr_id = H5Aopen_by_name(file_id, path.c_str(), name.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+    H5Aread(attr_id, H5T_NATIVE_INT, &attr_value);
+
+    H5Aclose(attr_id);
 
     return 0;
 }

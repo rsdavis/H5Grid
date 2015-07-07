@@ -39,8 +39,13 @@ int main(int argc, char ** argv) {
     */
     int dims[3] = {100, 120, 140};
     int ndims = 3;
+    int value;
     H5Grid h5;
     h5.open("test.h5", "w", dims, ndims);
     h5.set_attribute("/path/to/my/Nx", 100);
+    int stat = h5.get_attribute("/path/to/my/Nx", value);
+    printf("stat = %d\n", stat);
+    h5.close();
+    std::cout << value << std::endl;
     return 0;
 }
