@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include "hdf5.h"
 
 //! A simple interface for storing/accessing grid data in hdf5 files
@@ -21,6 +22,7 @@ class H5Grid {
         int write_dataset(std::string dataset_name, double * dataset);
         int set_attribute(std::string attr_name, int attr_value);
         int get_attribute(std::string attr_name, int &attr_value);
+        int list(std::string path, std::vector<std::string> &list);
         int close();
 };
 
@@ -264,6 +266,37 @@ int H5Grid :: get_attribute(std::string attr_name, int &attr_value)
     H5Aread(attr_id, H5T_NATIVE_INT, &attr_value);
 
     H5Aclose(attr_id);
+
+    return 0;
+}
+
+int H5Grid :: list(std::string path, std::vector<std::string> &list)
+{
+
+    /**
+    @param path list all the dataset in this path
+    @param list modified to contain the names of the datasets
+    **/
+
+    hid_t group_id;
+    H5G_info_t group_info;
+
+    // need to implement group existence check
+
+    group_id = H5Gopen(file_id, path.c_str(), H5P_DEFAULT);
+    H5Gget_info(group_id, &group_info);
+
+    list.resize(group_info.nlinks);
+
+    for (int i=0; i<group_info.nlinks; i++)
+    {
+        char name[256];
+        H5Gget_objname_by_idx(group_id, i, name, 256);
+        list[i] = name;
+    }
+
+
+    H5Gclose(group_id);
 
     return 0;
 }

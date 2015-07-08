@@ -78,7 +78,7 @@ TEST(H5GridTest, WriteReadData)
     double * data = (double *) malloc(sizeof(double)*nx*ny);
     int stat;
 
-    stat = h0.open("test.h5", "w", nx, ny, nz);
+    stat = h0.open("test4.h5", "w", nx, ny, nz);
     ASSERT_EQ(stat, 0);
 
     for (i=0; i<nx*ny; i++) data[i] = i;
@@ -113,6 +113,37 @@ TEST(H5GridTest, WriteReadData)
     free(data);
 }
 
+TEST(H5GridTest, list)
+{
+    int nx = 10;
+    int ny = 20;
+    int nz = 0;
+    int stat;
+    std::vector<std::string> list;
+
+    double * data = (double *) malloc(sizeof(double)*nx*ny);
+
+    H5Grid h5;
+    stat = h5.open("test5.h5", "w", nx, ny, nz);
+    ASSERT_EQ(stat, 0);
+    h5.write_dataset("/data1", data);
+    h5.write_dataset("/data2", data);
+    h5.write_dataset("/data3", data);
+    h5.write_dataset("/data4", data);
+    stat = h5.list("/", list);
+    ASSERT_EQ(stat, 0);
+
+    EXPECT_EQ(list.size(), 4);
+
+    h5.write_dataset("/path/to/my/data1", data);
+    h5.write_dataset("/path/to/my/data2", data);
+    h5.write_dataset("/path/to/my/data3", data);
+
+    h5.list("/path/to/my/", list);
+    EXPECT_EQ(list.size(), 3);
+
+    h5.close();
+}
 
 
 int main(int argc, char ** argv) {
