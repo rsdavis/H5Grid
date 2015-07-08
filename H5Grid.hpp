@@ -69,6 +69,10 @@ int H5Grid :: open(std::string filename, std::string mode, int &nx, int &ny, int
     For 2D data, nz should be set to 0.
     **/
 
+    /** \error ERROR 1: mode must be either "r", "w", or "a" */
+    /** \error ERROR 2: a file is already open */
+    /** \error ERROR 3: mode is "r" or "a" but the file does not exist */
+    /** \error ERROR 4: file is not in hdf5 format */
 
     unsigned read, write, append;
 
@@ -145,6 +149,9 @@ int H5Grid :: write_dataset(std::string dataset_name, double * dataset)
     * @param dataset pointer to the first element of data
     **/
 
+    /** \error ERROR 1: dataset already existed and was overwritten */
+    /** \error ERROR 2: internal error when writing the dataset */
+
     hid_t dcpl_id, space_id, data_id;
     herr_t error;
     int rank;
@@ -189,8 +196,8 @@ int H5Grid :: write_dataset(std::string dataset_name, double * dataset)
                      H5P_DEFAULT,
                      dataset);
 
-    if (error < 0) return 1;
-    if (dataset_exists) return 2;
+    if (dataset_exists) return 1;
+    if (error < 0) return 2;
 
     return 0;
 }
@@ -221,6 +228,9 @@ int H5Grid :: set_attribute(std::string attr_name, int  attr_value)
     For example, setting an attribute named my_attr in the root group
     should be specified as "/my_attr"
     */
+
+    /** \error ERROR 1: attr_name not sufficient, ensure that it begins with a backslash */
+    /** \error ERROR 2: attr_name not sufficient, ensure that it does not end in a backslash */
 
     std::string path;
     std::string name;
@@ -253,6 +263,8 @@ int H5Grid :: get_attribute(std::string attr_name, int &attr_value)
     * @param attr_name Name/address of the attribute
     * @param attr_value Value of the attribute
     **/
+
+    /** \error ERROR 1: attribute does not exist */
 
     hid_t attr_id;
     std::string path;
@@ -303,6 +315,8 @@ int H5Grid :: list(std::string path, std::vector<std::string> &list)
 
 int H5Grid :: close()
 {
+    /** \error ERROR 1: there is no file to close **/
+
     if (file_id == 0) {
         // no file opened
         return 1;
