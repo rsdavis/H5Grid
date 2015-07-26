@@ -101,7 +101,7 @@ TEST(H5GridTest, WriteReadData)
 
     // check for overwriting 
     stat = h0.write_dataset("/c/frame_000", data);
-    EXPECT_EQ(stat, 2);
+    EXPECT_EQ(stat, 1);
 
     stat = h0.read_dataset("/c/frame_000", data);
     ASSERT_EQ(stat, 0);
@@ -145,8 +145,53 @@ TEST(H5GridTest, list)
     h5.close();
 }
 
+TEST(H5GridTest, ListRead)
+{
+    int nx = 10;
+    int ny = 20;
+    int nz = 0;
+    int stat;
+    std::vector<std::string> list;
+
+    double * data = new double [nx*ny];
+    H5Grid h5;
+    stat = h5.open("test6.h5", "w", nx, ny, nz);
+    ASSERT_EQ(stat, 0);
+
+    h5.write_dataset("/c", data);
+    h5.write_dataset("/phi", data);
+    h5.write_dataset("/eta_00", data);
+    h5.write_dataset("/eta_01", data);
+
+    stat = h5.list("/", list);
+    ASSERT_EQ(stat, 0);
+
+    h5.close();
+    delete [] data;
+}
+
+TEST(H5GridTest, Append)
+{
+    int nx = 5;
+    int ny = 10;
+    int nz = 15;
+    int stat;
+
+    double * data = new double [nx*ny*nz];
+    H5Grid h5;
+    stat = h5.open("test7.h5", "w", nx, ny, nz);
+    ASSERT_EQ(stat, 0);
+    stat = h5.write_dataset("/phi/000000", data);
+    ASSERT_EQ(stat, 0);
+    h5.close();
+
+    h5.open("test7.h5", "a", nx, ny, nz);
+    h5.write_dataset("/phi/000001", data);
+    h5.close();
+}
 
 int main(int argc, char ** argv) {
     ::testing::InitGoogleTest(&argc, argv);
+    //::testing::GTEST_FLAG(filter) = "H5GridTest.Append";
     return RUN_ALL_TESTS();
 }
