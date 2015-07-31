@@ -5,17 +5,16 @@
 TEST(H5GridTest, OpenClose)
 {
     H5Grid h0, h1;
-    int nx = 10;
-    int ny = 20;
-    int nz = 0;
+    int dims[3] = {10,20,1};
+    int ndims = 2;
     int stat;
 
     // check that it opens
-    stat = h0.open("test2.h5", "w", nx, ny, nz);
+    stat = h0.open("test2.h5", "w", dims, ndims);
     ASSERT_EQ(stat, 0);
 
     // check that it cant open anything else
-    stat = h0.open("test3.h5", "w", nx, ny, nz);
+    stat = h0.open("test3.h5", "w", dims, ndims);
     EXPECT_NE(stat, 0);
 
     stat = h0.close();
@@ -25,16 +24,16 @@ TEST(H5GridTest, OpenClose)
     stat = h0.close();
     EXPECT_NE(stat, 0);
 
-    nx = 1;
-    ny = 1;
-    nz = 1;
+    dims[0] = 1;
+    dims[1] = 1;
+    dims[2] = 1;
 
     // check open in read mode
-    stat = h1.open("test2.h5", "r", nx, ny, nz);
+    stat = h1.open("test2.h5", "r", dims, ndims);
     ASSERT_EQ(stat, 0);
-    EXPECT_EQ(nx, 10);
-    EXPECT_EQ(ny, 20);
-    EXPECT_EQ(nz, 0);
+    EXPECT_EQ(dims[0], 10);
+    EXPECT_EQ(dims[1], 20);
+    EXPECT_EQ(dims[2], 1);
     h1.close();
 }
 
@@ -42,10 +41,9 @@ TEST(H5GridTest, OpenClose)
 TEST(H5GridTest, SetGetAttr)
 {
     H5Grid h5;
-    int nx = 10;
-    int ny = 20;
-    int nz = 0;
-    h5.open("test.h5", "w", nx, ny, nz);
+    int dims[2] = {10,20};
+    int ndims = 2;
+    h5.open("test.h5", "w", dims, ndims);
 
     int temp = 0;
     int stat;
@@ -72,16 +70,15 @@ TEST(H5GridTest, WriteReadData)
 {
     H5Grid h0, h1;
     int i;
-    int nx = 10;
-    int ny = 20;
-    int nz = 0;
-    double * data = (double *) malloc(sizeof(double)*nx*ny);
+    int dims[2] = {10, 20};
+    int ndims = 2;
+    double * data = (double *) malloc(sizeof(double)*dims[0]*dims[1]);
     int stat;
 
-    stat = h0.open("test4.h5", "w", nx, ny, nz);
+    stat = h0.open("test4.h5", "w", dims, ndims);
     ASSERT_EQ(stat, 0);
 
-    for (i=0; i<nx*ny; i++) data[i] = i;
+    for (i=0; i<dims[0]*dims[1]; i++) data[i] = i;
 
     // check error for nonexistent dataset
     /* not yet implemented
@@ -97,7 +94,7 @@ TEST(H5GridTest, WriteReadData)
     EXPECT_EQ(data[10], 10);
 
 
-    for (i=0; i<nx*ny; i++) data[i]++;
+    for (i=0; i<dims[0]*dims[1]; i++) data[i]++;
 
     // check for overwriting 
     stat = h0.write_dataset("/c/frame_000", data);
@@ -115,16 +112,15 @@ TEST(H5GridTest, WriteReadData)
 
 TEST(H5GridTest, list)
 {
-    int nx = 10;
-    int ny = 20;
-    int nz = 0;
+    int dims[2] = {10, 20};
+    int ndims = 2;
     int stat;
     std::vector<std::string> list;
 
-    double * data = (double *) malloc(sizeof(double)*nx*ny);
+    double * data = (double *) malloc(sizeof(double)*dims[0]*dims[1]);
 
     H5Grid h5;
-    stat = h5.open("test5.h5", "w", nx, ny, nz);
+    stat = h5.open("test5.h5", "w", dims, ndims);
     ASSERT_EQ(stat, 0);
     h5.write_dataset("/data1", data);
     h5.write_dataset("/data2", data);
@@ -147,15 +143,14 @@ TEST(H5GridTest, list)
 
 TEST(H5GridTest, ListRead)
 {
-    int nx = 10;
-    int ny = 20;
-    int nz = 0;
+    int dims[2] = {10, 20};
+    int ndims = 2;
     int stat;
     std::vector<std::string> list;
 
-    double * data = new double [nx*ny];
+    double * data = new double [dims[0]*dims[1]];
     H5Grid h5;
-    stat = h5.open("test6.h5", "w", nx, ny, nz);
+    stat = h5.open("test6.h5", "w", dims, ndims);
     ASSERT_EQ(stat, 0);
 
     h5.write_dataset("/c", data);
@@ -172,20 +167,19 @@ TEST(H5GridTest, ListRead)
 
 TEST(H5GridTest, Append)
 {
-    int nx = 5;
-    int ny = 10;
-    int nz = 15;
+    int dims[3] = {5,10,15};
+    int ndims = 3;
     int stat;
 
-    double * data = new double [nx*ny*nz];
+    double * data = new double [dims[0]*dims[1]*dims[2]];
     H5Grid h5;
-    stat = h5.open("test7.h5", "w", nx, ny, nz);
+    stat = h5.open("test7.h5", "w", dims, ndims);
     ASSERT_EQ(stat, 0);
     stat = h5.write_dataset("/phi/000000", data);
     ASSERT_EQ(stat, 0);
     h5.close();
 
-    h5.open("test7.h5", "a", nx, ny, nz);
+    h5.open("test7.h5", "a", dims, ndims);
     h5.write_dataset("/phi/000001", data);
     h5.close();
 }
