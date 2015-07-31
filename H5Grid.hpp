@@ -82,20 +82,19 @@ int H5Grid :: open(std::string filename, std::string mode, int * dims, int &ndim
     // check that a file is not already open
     if (m_file_id != 0) return 2;
 
-    for (int i=0; i<ndims; i++) m_dims[i] = dims[i];
-    m_ndims = ndims;
 
 
     if ( write ) {
         m_file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+        m_ndims = ndims;
+        for (int i=0; i<ndims; i++) m_dims[i] = dims[i];
 
         space_id = H5Screate_simple(1, &m_ndims, NULL);
         attr_id = H5Acreate(m_file_id, "DIMS", H5T_NATIVE_INT, space_id, H5P_DEFAULT, H5P_DEFAULT);
         H5Awrite(attr_id, H5T_NATIVE_INT, dims);
         H5Sclose(space_id);
         H5Aclose(attr_id);
-
-
 
     } else if (read || append) {
         FILE * file_exists = fopen(filename.c_str(), "r");
@@ -116,6 +115,9 @@ int H5Grid :: open(std::string filename, std::string mode, int * dims, int &ndim
         H5Sget_simple_extent_dims(space_id, &m_ndims, NULL);
         H5Aclose(attr_id);
         H5Sclose(space_id);
+
+        ndims = m_ndims;
+        for (int i=0; i<ndims; i++) m_dims[i] = dims[i];
     }
 
     return 0;
