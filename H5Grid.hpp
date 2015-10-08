@@ -12,13 +12,20 @@ class H5Grid {
         void parse (std::string attr_name, std::string &path, std::string &name);
 
     public:
+
         H5Grid();
+
         int open(std::string filename, std::string mode);
-        int read_dataset(std::string dataset_name, std::vector<int> &dims, double * dataset);
-        int write_dataset(std::string dataset_name, std::vector<int> dims, double * dataset);
+        int read_dataset(std::string dataset_name, double * dataset);
+        int write_dataset(std::string dataset_name, double * dataset, int * dims, int ndims);
+
+        int get_ndims(std::string dataset_name, int &ndims);
+        int get_dims(std::string dataset_name, int * dims);
+
         int list(std::string path, std::vector<std::string> &list);
         int set_attribute(std::string attr_name, int  attr_value);
         int get_attribute(std::string attr_name, int &attr_value);
+
         int close();
 };
 
@@ -29,7 +36,7 @@ H5Grid :: H5Grid () {
 void H5Grid :: create_group(std::string path)
 {
     int start = 1;
-    int pos = 0;
+    size_t pos = 0;
     if (path[0]!='/') path = "/" + path;
 
     while ((pos = path.find("/", start)) != std::string::npos)
@@ -88,7 +95,7 @@ int H5Grid :: open(std::string filename, std::string mode)
     return 0;
 }
 
-int H5Grid :: write_dataset(std::string dataset_name, std::vector<int> dims, double * dataset)
+int H5Grid :: write_dataset(std::string dataset_name, double * dataset, int * dims, int ndims)
 {
 
     hid_t data_id;
@@ -99,12 +106,12 @@ int H5Grid :: write_dataset(std::string dataset_name, std::vector<int> dims, dou
 
     if ( dataset_exists == 0 ) {
 
-        hsize_t h5_ndims = dims.size();
-        hsize_t h5_dims[dims.size()];
+        hsize_t h5_ndims = (hsize_t) ndims;
+        hsize_t h5_dims[ndims];
         hid_t dcpl_id, space_id;
 
         // convert datatypes to be compatible with hdf5
-        for (int i=0; i<dims.size(); i++) h5_dims[i] = (hid_t) dims[i];
+        for (int i=0; i<ndims; i++) h5_dims[i] = (hid_t) dims[i];
 
         dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
         H5Pset_chunk(dcpl_id, h5_ndims, h5_dims);
@@ -142,22 +149,48 @@ int H5Grid :: write_dataset(std::string dataset_name, std::vector<int> dims, dou
     return 0;
 }
 
-int H5Grid :: read_dataset(std::string dataset_name, std::vector<int> &dims, double * dataset)
+int H5Grid :: get_ndims(std::string dataset_name, int &ndims)
 {
-    hid_t space_id, data_id;
+    hid_t data_id, space_id;
+
+    data_id = H5Dopen(m_file_id, dataset_name.c_str(), H5P_DEFAULT);
+    space_id = H5Dget_space(data_id);
+    ndims = H5Sget_simple_extent_ndims(space_id);
+
+    H5Sclose(space_id);
+    H5Dclose(data_id);
+
+    return 0;
+}
+
+int H5Grid :: get_dims(std::string dataset_name, int * dims)
+{
+    int ndims;
+    int max_dims=10;
+    hid_t data_id, space_id;
+    hsize_t h5_dims[max_dims];
+
+    data_id = H5Dopen(m_file_id, dataset_name.c_str(), H5P_DEFAULT);
+    space_id = H5Dget_space(data_id);
+    ndims = H5Sget_simple_extent_ndims(space_id);
+    if (ndims > max_dims) return 1;
+    H5Sget_simple_extent_dims(space_id, h5_dims, NULL);
+    for (int i=0; i<ndims; i++) dims[i] = (int) h5_dims[i];
+
+    H5Sclose(space_id);
+    H5Dclose(data_id);
+
+    return 0;
+}
+
+int H5Grid :: read_dataset(std::string dataset_name, double * dataset)
+{
+    hid_t data_id;
     herr_t error;
-    int h5_ndims;
-    hsize_t h5_dims[10];
 
     data_id = H5Dopen(m_file_id, dataset_name.c_str(), H5P_DEFAULT);
     error = H5Dread(data_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, dataset);
     if (error < 0) return 1;
-
-    space_id = H5Dget_space(data_id);
-    h5_ndims = H5Sget_simple_extent_ndims(space_id);
-    H5Sget_simple_extent_dims(space_id, h5_dims, NULL);
-    dims.resize(h5_ndims);
-    for (int i=0; i<h5_ndims; i++) dims[i] = h5_dims[i];
 
     H5Dclose(data_id);
     return 0;
@@ -173,15 +206,17 @@ int H5Grid :: list(std::string path, std::vector<std::string> &list)
 
     hid_t group_id;
     H5G_info_t group_info;
+    int nlinks;
 
     // need to implement group existence check
 
     group_id = H5Gopen(m_file_id, path.c_str(), H5P_DEFAULT);
     H5Gget_info(group_id, &group_info);
+    nlinks = group_info.nlinks;
 
-    list.resize(group_info.nlinks);
+    list.resize(nlinks);
 
-    for (int i=0; i<group_info.nlinks; i++)
+    for (int i=0; i<nlinks; i++)
     {
         char name[256];
         H5Gget_objname_by_idx(group_id, i, name, 256);

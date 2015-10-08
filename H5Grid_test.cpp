@@ -35,6 +35,7 @@ TEST(H5GridTest, OpenClose)
 TEST(H5GridTest, ReadWrite)
 {
     H5Grid h0, h1;
+    int ndims = 2;
     int dims[2] = {10,20};
     std::vector<int> h5dims;
     h5dims.assign(dims, dims+2); 
@@ -47,10 +48,10 @@ TEST(H5GridTest, ReadWrite)
 
     for (int i=0; i<dims[0]*dims[1]; i++) data1[i] = i;
 
-    stat = h0.write_dataset("c/frame_000", h5dims, data1);
+    stat = h0.write_dataset("c/frame_000", data1, dims, ndims);
     ASSERT_EQ(stat, 0);
 
-    stat = h0.read_dataset("/c/frame_000", h5dims, data2);
+    stat = h0.read_dataset("/c/frame_000", data2);
     ASSERT_EQ(stat, 0);
 
     for (int i=0; i<dims[0]*dims[1]; i++) 
@@ -64,6 +65,7 @@ TEST(H5GridTest, ReadWrite)
 TEST(H5GridTest, Append)
 {
     H5Grid h5;
+    int ndims = 2;
     int dims[2] = {10,20};
     std::vector<int> h5dims;
     h5dims.assign(dims, dims+2);
@@ -73,13 +75,13 @@ TEST(H5GridTest, Append)
 
     stat = h5.open("test5.h5", "w");
     ASSERT_EQ(stat, 0);
-    stat = h5.write_dataset("phi/frame_0", h5dims, data);
+    stat = h5.write_dataset("phi/frame_0", data, dims, ndims);
     ASSERT_EQ(stat, 0);
     h5.close();
 
     stat = h5.open("test5.h5", "a");
     ASSERT_EQ(stat, 0);
-    stat = h5.write_dataset("phi/frame_1", h5dims, data);
+    stat = h5.write_dataset("phi/frame_1", data, dims, ndims);
     ASSERT_EQ(stat, 0);
     h5.close();
 
@@ -88,6 +90,7 @@ TEST(H5GridTest, Append)
 TEST(H5GridTest, OverwriteFile)
 {
     H5Grid h5;
+    int ndims = 2;
     int dims[2] = {10,20};
     std::vector<int> h5dims;
     h5dims.assign(dims, dims+2);
@@ -96,34 +99,33 @@ TEST(H5GridTest, OverwriteFile)
 
     stat = h5.open("test6.h5", "w");
     ASSERT_EQ(stat, 0);
-    stat = h5.write_dataset("phi", h5dims, data);
+    stat = h5.write_dataset("phi", data, dims, ndims);
     ASSERT_EQ(stat, 0);
     h5.close();
 
     stat = h5.open("test6.h5", "w");
     ASSERT_EQ(stat, 0);
-    stat = h5.write_dataset("phi", h5dims, data);
+    stat = h5.write_dataset("phi", data, dims, ndims);
     ASSERT_EQ(stat, 0);
     h5.close();
 }
 
 TEST(H5GridTest, list)
 {
+    int ndims = 2;
     int dims[2] = {10, 20};
     int stat;
     std::vector<std::string> list;
-    std::vector<int> h5dims;
-    h5dims.assign(dims, dims+2);
 
     double * data = (double *) malloc(sizeof(double)*dims[0]*dims[1]);
 
     H5Grid h5;
     stat = h5.open("test7.h5", "w");
     ASSERT_EQ(stat, 0);
-    h5.write_dataset("/data1", h5dims, data);
-    h5.write_dataset("/data2", h5dims, data);
-    h5.write_dataset("/data3", h5dims, data);
-    h5.write_dataset("/data4", h5dims, data);
+    h5.write_dataset("/data1", data, dims, ndims);
+    h5.write_dataset("/data2", data, dims, ndims);
+    h5.write_dataset("/data3", data, dims, ndims);
+    h5.write_dataset("/data4", data, dims, ndims);
     stat = h5.list("/", list);
     ASSERT_EQ(stat, 0);
 
@@ -133,9 +135,9 @@ TEST(H5GridTest, list)
     EXPECT_EQ(list[2], "data3");
     EXPECT_EQ(list[3], "data4");
 
-    h5.write_dataset("/path/to/my/data1", h5dims, data);
-    h5.write_dataset("/path/to/my/data2", h5dims, data);
-    h5.write_dataset("/path/to/my/data3", h5dims, data);
+    h5.write_dataset("/path/to/my/data1", data, dims, ndims);
+    h5.write_dataset("/path/to/my/data2", data, dims, ndims);
+    h5.write_dataset("/path/to/my/data3", data, dims, ndims);
 
     h5.list("/path/to/my/", list);
     EXPECT_EQ(list.size(), 3);
@@ -168,6 +170,35 @@ TEST(H5GridTest, SetGetAttr)
     EXPECT_EQ(attr, 100);
     
     h5.close();
+}
+
+TEST(H5GridTest, GetDims)
+{
+    int ndims = 2;
+    int dims[2] = {10,20};
+    int stat;
+
+    double * data = new double [dims[0]*dims[1]];
+
+    H5Grid h5;
+    h5.open("test3.h5", "w");
+    h5.write_dataset("phi", data, dims, ndims);
+    h5.close();
+
+    int test_ndims;
+    int test_dims[10];
+
+    h5.open("test3.h5", "r");
+    stat = h5.get_ndims("phi", test_ndims);
+    ASSERT_EQ(stat, 0);
+    EXPECT_EQ(ndims, test_ndims);
+
+    stat = h5.get_dims("phi", test_dims);
+    ASSERT_EQ(stat, 0);
+    EXPECT_EQ(test_dims[0], 10);
+    EXPECT_EQ(test_dims[1], 20);
+    h5.close();
+
 }
 
 int main(int argc, char ** argv)
